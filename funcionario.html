@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Gestão Funcionários - Cafeteria Conforto</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin:0; padding:0; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #e9f0f7;
+    color: #33475b;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: #a7c7e7;
+    color: #fff;
+    padding: 1rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.8rem;
+    user-select: none;
+    position: relative;
+  }
+  main {
+    flex: 1;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 1rem;
+    width: 100%;
+  }
+  /* Funcionario - Login */
+  #func-login {
+    max-width: 320px;
+    margin: 2rem auto;
+    background: #d6e3f0;
+    border-radius: 1rem;
+    padding: 1.5rem 1.5rem 2rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(51, 71, 91, 0.1);
+    user-select: none;
+  }
+  #func-login h2 {
+    margin: 0 0 1rem 0;
+    text-align: center;
+    color: #2a4370;
+  }
+  #func-login label {
+    display: block;
+    font-weight: 700;
+    color: #527093;
+    margin-bottom: 0.2rem;
+  }
+  #func-login input {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    font-size: 1rem;
+    border: 2px solid #a7c7e7;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    color: #33475b;
+  }
+  #func-login button {
+    width: 100%;
+    padding: 0.8rem;
+    background: #7aaaee;
+    border: none;
+    border-radius: 0.6rem;
+    font-size: 1.2rem;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  #func-login button:hover {
+    background: #5b8bcc;
+  }
+  #func-login .error-msg {
+    color: #d45d5d;
+    text-align: center;
+    margin: 0.3rem 0 0 0;
+    font-weight: 700;
+  }
+
+  /* Funcionario - Área Principal */
+  #func-area {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  #func-area h2 {
+    font-weight: 700;
+    color: #2a4370;
+    text-align: center;
+    user-select: none;
+  }
+  #logoutBtn {
+    margin: 0 auto 1rem auto;
+    background: #d45d5d;
+    color: white;
+    border: none;
+    border-radius: 0.6rem;
+    padding: 0.6rem 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    user-select: none;
+  }
+  #logoutBtn:hover {
+    background: #a63f3f;
+  }
+  .orders-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 0.8rem;
+    background: #cde0f7;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(42, 67, 112, 0.15);
+  }
+  .order {
+    background: #d6e3f0;
+    border-radius: 0.8rem;
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 6px rgba(51, 71, 91, 0.1);
+    user-select: none;
+  }
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+  .order-id {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #2a4370;
+  }
+  .order-time {
+    font-size: 0.85rem;
+    color: #527093;
+    font-style: italic;
+  }
+  .order-items-list {
+    margin-left: 1rem;
+  }
+  .order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #a7c7e7;
+    border-radius: 0.6rem;
+    margin-bottom: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .order-item.done {
+    text-decoration: line-through;
+    background: #586f91;
+    color: #d0d8e6;
+  }
+  .order-item button.mark-done-btn {
+    background: transparent;
+    border: 2px solid #e1eaf6;
+    border-radius: 0.4rem;
+    color: #d6e0f2;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.1rem 0.8rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s ease,color 0.3s ease;
+  }
+  .order-item.done button.mark-done-btn {
+    border-color: #aac6ff;
+    color: #aac6ff;
+  }
+  .order-item button.mark-done-btn:hover {
+    background: rgba(255 255 255 / 0.16);
+  }
+  #finalizeOrderBtn {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 0.75rem;
+    background: #5b8bcc;
+    border: none;
+    border-radius: 0.8rem;
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 4px 10px #4879c3;
+    transition: background 0.3s ease;
+  }
+  #finalizeOrderBtn:disabled {
+    background: #a7c7e7;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  #finalizeOrderBtn:hover:not(:disabled) {
+    background: #3c65a9;
+  }
+  /* Scrollbar orders */
+  .orders-list::-webkit-scrollbar {
+    width: 8px;
+  }
+  .orders-list::-webkit-scrollbar-thumb {
+    background: #7aaaee;
+    border-radius: 4px;
+  }
+  /* Responsividade e ajustes menores */
+  @media (max-width: 400px) {
+    .quantity-controls {
+      flex-direction: row;
+      margin-top: 0.5rem;
+    }
+    .qty-btn {
+      width: 36px;
+      height: 36px;
+      font-size: 1.6rem;
+    }
+  }
+</style>
+</head>
+<body>
+<header>Gestão Funcionários - Cafeteria Conforto</header>
+<main>
+  <section id="func-login" aria-label="Login do funcionário" tabindex="0">
+    <h2>Login Funcionário</h2>
+    <form id="loginForm" novalidate>
+      <label for="username">Usuário</label>
+      <input type="text" id="username" name="username" autocomplete="username" required />
+      <label for="password">Senha</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required />
+      <button type="submit">Entrar</button>
+      <div class="error-msg" aria-live="assertive" id="loginError" role="alert"></div>
+    </form>
+  </section>
+
+  <section id="func-area" aria-label="Área principal do funcionário" tabindex="0" hidden>
+    <h2>Pedidos Pendentes</h2>
+    <button id="logoutBtn" aria-label="Sair do sistema">Sair</button>
+    <div class="orders-list" id="ordersList" tabindex="0">
+      <!-- Pedidos via JS -->
+    </div>
+    <button id="finalizeOrderBtn" disabled>Pedido Finalizado</button>
+  </section>
+</main>
+<script>
+  const products = [
+    { id: 'espresso', name: 'Café Espresso', description: 'Café espresso forte e encorpado', price: 4.50 },
+    { id: 'cappuccino', name: 'Cappuccino', description: 'Espuma cremosa com toque de chocolate', price: 7.00 },
+    { id: 'latte', name: 'Latte', description: 'Leite vaporizado com café suave', price: 6.00 },
+    { id: 'mocha', name: 'Mocha', description: 'Café com chocolate e chantilly', price: 7.50 },
+    { id: 'cookie', name: 'Biscoito amanteigado', description: 'Biscoitos crocantes para acompanhar', price: 3.00 }
+  ];
+
+  const funcLoginSection = document.getElementById('func-login');
+  const funcAreaSection = document.getElementById('func-area');
+  const loginForm = document.getElementById('loginForm');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  const loginError = document.getElementById('loginError');
+  const ordersList = document.getElementById('ordersList');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const finalizeOrderBtn = document.getElementById('finalizeOrderBtn');
+
+  const FUNC_USER = 'funcionario';
+  const FUNC_PASS = '1234';
+
+  let loggedIn = false;
+  let pedidos = [];
+  let selectedOrderId = null;
+
+  function formatElapsedTime(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds/60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds < 10 ? '0' : ''}${seconds}s`;
+  }
+
+  function renderFuncionarioArea() {
+    ordersList.innerHTML = '';
+    if (pedidos.length === 0) {
+      ordersList.innerHTML = '<p style="text-align:center; color:#527093; font-weight:700; user-select:none;">Nenhum pedido pendente.</p>';
+      finalizeOrderBtn.disabled = true;
+      selectedOrderId = null;
+      return;
+    }
+
+    pedidos.forEach(pedido => {
+      const timeElapsed = formatElapsedTime(Date.now() - pedido.timestamp);
+
+      const orderEl = document.createElement('div');
+      orderEl.className = 'order';
+      orderEl.setAttribute('data-order-id', pedido.id);
+      orderEl.tabIndex = 0;
+      orderEl.innerHTML = `
+        <div class="order-header">
+          <div class="order-id">Pedido: ${pedido.id}</div>
+          <div class="order-time">Tempo de espera: ${timeElapsed}</div>
+        </div>
+        <div class="order-items-list">
+          ${pedido.produtos.map((p,i) => `
+          <div class="order-item ${p.done ? 'done' : ''}" data-prod-index="${i}">
+            <span>${p.quantity} x ${products.find(pr => pr.id === p.productId)?.name || 'Produto'}</span>
+            <button class="mark-done-btn" aria-label="${p.done ? 'Desmarcar feito' : 'Marcar como feito'}">${p.done ? 'Feito' : 'Fazer'}</button>
+          </div>
+          `).join('')}
+        </div>
+      `;
+      ordersList.appendChild(orderEl);
+    });
+
+    finalizeOrderBtn.disabled = true;
+    selectedOrderId = null;
+  }
+
+  ordersList.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('mark-done-btn')) return;
+    const orderEl = e.target.closest('.order');
+    const orderId = orderEl.getAttribute('data-order-id');
+    const prodIndex = parseInt(e.target.parentElement.getAttribute('data-prod-index'), 10);
+
+    const pedido = pedidos.find(p => p.id === orderId);
+    if (!pedido) return;
+
+    pedido.produtos[prodIndex].done = !pedido.produtos[prodIndex].done;
+
+    savePedidosToStorage();
+    renderFuncionarioArea();
+
+    const allDone = pedido.produtos.every(p => p.done);
+    if (allDone) {
+      selectedOrderId = orderId;
+      finalizeOrderBtn.disabled = false;
+    } else {
+      selectedOrderId = null;
+      finalizeOrderBtn.disabled = true;
+    }
+  });
+
+  finalizeOrderBtn.addEventListener('click', () => {
+    if (!selectedOrderId) return;
+    const idx = pedidos.findIndex(p => p.id === selectedOrderId);
+    if (idx < 0) return;
+
+    pedidos.splice(idx, 1);
+    savePedidosToStorage();
+    renderFuncionarioArea();
+    selectedOrderId = null;
+    finalizeOrderBtn.disabled = true;
+  });
+
+  function savePedidosToStorage() {
+    localStorage.setItem('cafeteria_pedidos', JSON.stringify(pedidos));
+  }
+
+  function getPedidos() {
+    const pedidosStr = localStorage.getItem('cafeteria_pedidos');
+    if (!pedidosStr) return [];
+    try {
+      return JSON.parse(pedidosStr);
+    } catch {
+      return [];
+    }
+  }
+
+  loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    loginError.textContent = '';
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (username === FUNC_USER && password === FUNC_PASS) {
+      loggedIn = true;
+      funcLoginSection.hidden = true;
+      funcAreaSection.hidden = false;
+      pedidos = getPedidos();
+      renderFuncionarioArea();
+    } else {
+      loginError.textContent = 'Usuário ou senha incorretos!';
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    loggedIn = false;
+    funcLoginSection.hidden = false;
+    funcAreaSection.hidden = true;
+    loginForm.reset();
+    loginError.textContent = '';
+  });
+
+  // Inicialização
+  function init() {
+    funcLoginSection.hidden = false;
+    funcAreaSection.hidden = true;
+  }
+  init();
+</script>
+</body>
+</html>
+
