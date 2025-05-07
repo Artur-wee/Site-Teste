@@ -1,672 +1,208 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Cardápio Cafeteria</title>
-<style>
-  /* Cores */
-  :root {
-    --azul-escuro-pastel: #264653;
-    --fundo-branco: #ffffff;
-    --verde-claro: #2a9d8f;
-    --vermelho: #e76f51;
-    --cinza-claro: #f9f9f9;
-    --cinza-escuro: #777;
-  }
+// State variables
+let isFuncionarioLogado = false;
+let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
+let total = 0;
 
-  /* Reset e base */
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
+// Elements
+const clienteSection = document.getElementById('clienteSection');
+const funcionarioSection = document.getElementById('funcionarioSection');
+const toggleBtn = document.getElementById('toggleViewBtn');
+const loginModal = document.getElementById('loginModal');
+const loginError = document.getElementById('loginError');
+const finalizarPedidoBtn = document.getElementById('finalizarPedidoBtn');
+const pedidosFuncionario = document.getElementById('pedidos-funcionario');
 
-  body, html {
-    height: 100%;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--fundo-branco);
-    color: var(--azul-escuro-pastel);
-    display: flex;
-    flex-direction: column;
-  }
+// Function to show client view
+function mostrarCliente() {
+  clienteSection.classList.add('active');
+  funcionarioSection.classList.remove('active');
+  toggleBtn.innerText = 'Área do Funcionário';
+  toggleBtn.setAttribute('aria-label', 'Alternar para área do funcionário');
+}
 
-  header {
-    background-color: var(--azul-escuro-pastel);
-    color: var(--fundo-branco);
-    padding: 1.5rem 1rem;
-    text-align: center;
-    font-size: 2rem;
-    font-weight: 700;
-    border-radius: 0 0 8px 8px;
-    user-select: none;
-    flex-shrink: 0;
+// Function to show employee view (only if logged in)
+function mostrarFuncionario() {
+  if (!isFuncionarioLogado) {
+    // Show login modal
+    loginModal.classList.remove('hidden');
+    // Autofocus username input
+    document.getElementById('usernameInput').focus();
+    return;
   }
+  clienteSection.classList.remove('active');
+  funcionarioSection.classList.add('active');
+  toggleBtn.innerText = 'Área do Cliente';
+  toggleBtn.setAttribute('aria-label', 'Alternar para área do cliente');
+}
 
-  main {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    max-width: 600px;
-    margin: 0 auto;
-    width: 100%;
+// Toggle handler
+toggleBtn.addEventListener('click', () => {
+  if (clienteSection.classList.contains('active')) {
+    mostrarFuncionario();
+  } else {
+    mostrarCliente();
   }
+});
 
-  section {
-    display: none;
+// Login function
+function realizarLogin(event) {
+  event.preventDefault();
+  const username = document.getElementById('usernameInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  if (username === 'funcionario' && password === '1234') {
+    isFuncionarioLogado = true;
+    loginModal.classList.add('hidden');
+    loginError.innerText = '';
+    // Clear login form fields
+    document.getElementById('loginForm').reset();
+    mostrarFuncionario();
+  } else {
+    loginError.innerText = 'Usuário ou senha incorretos.';
   }
+}
 
-  section.active {
-    display: block;
+// Close modal on outside click or Escape key
+loginModal.addEventListener('click', (e) => {
+  if (e.target === loginModal) {
+    loginModal.classList.add('hidden');
+    loginError.innerText = '';
   }
+});
 
-  h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    border-bottom: 2px solid var(--azul-escuro-pastel);
-    padding-bottom: 0.3rem;
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && !loginModal.classList.contains('hidden')) {
+    loginModal.classList.add('hidden');
+    loginError.innerText = '';
   }
+});
 
-  .cardapio-lista {
-    list-style: none;
-    max-width: 480px;
-    margin: 0 auto 1.5rem auto;
+// Client-side cart functions
+function adicionarAoCarrinho(produto, preco) {
+  const item = carrinho.find(i => i.nome === produto);
+  if (item) {
+    item.quantidade++;
+  } else {
+    carrinho.push({ nome: produto, preco: preco, quantidade: 1 });
   }
+  atualizarCarrinho();
+}
 
-  .item {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.8rem 1rem;
-    border-bottom: 1px solid #ccc;
-    font-weight: 600;
-    font-size: 1.1rem;
-    align-items: center;
-  }
+function atualizarCarrinho() {
+  const carrinhoLista = document.getElementById('carrinho-lista');
+  carrinhoLista.innerHTML = '';
+  total = 0;
+  carrinho.forEach(item => {
+    total += item.preco * item.quantidade;
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'carrinho-item';
+    itemDiv.innerHTML = `
+      ${item.nome} (x${item.quantidade}) - R$ ${item.preco.toFixed(2)}
+      <button class=" botao botao-remover" aria-label="Remover um ${item.nome} do carrinho" onclick="removerDoCarrinho('${item.nome}')">Remover</button>
+    `;
+    carrinhoLista.appendChild(itemDiv);
+  });
+  document.getElementById('carrinho-total').innerText = `Total: R$ ${total.toFixed(2)}`;
 
-  .item:last-child {
-    border-bottom: none;
-  }
+  // Enable finalizarPedidoBtn only if there are items
+  finalizarPedidoBtn.disabled = carrinho.length === 0;
 
-  .nome-produto {
-    font-weight: 700;
-    display: block;
-  }
+  // Update localStorage
+  localStorage.setItem('carrinho', JSON.stringify(carrinho));
+}
 
-  .descricao-peso {
-    font-weight: 400;
-    font-size: 0.9rem;
-    margin-top: 0.15rem;
-    opacity: 0.7;
-  }
-
-  .preco-produto {
-    font-weight: 700;
-    white-space: nowrap;
-    margin-left: 1rem;
-  }
-
-  .detalhes-produto {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-  }
-
-  .botao {
-    background-color: var(--verde-claro);
-    color: white;
-    border: none;
-    padding: 0.4rem 0.8rem;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-left: 0.6rem;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease;
-  }
-
-  .botao:hover, .botao:focus {
-    background-color: #23867a;
-    outline: none;
-  }
-
-  .botao-remover {
-    background-color: var(--vermelho);
-  }
-
-  .botao-remover:hover, .botao-remover:focus {
-    background-color: #c9553a;
-  }
-
-  .carrinho {
-    max-width: 480px;
-    margin: 1rem auto;
-    padding: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: var(--cinza-claro);
-  }
-
-  .carrinho h3 {
-    margin-bottom: 1rem;
-  }
-
-  .carrinho-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-    align-items: center;
-  }
-
-  .carrinho-total {
-    font-weight: bold;
-    margin-top: 1rem;
-    font-size: 1.1rem;
-    text-align: right;
-  }
-
-  /* Modified Funcionario style: more subtle */
-  .funcionario {
-    max-width: 480px;
-    margin: 0 auto 2rem auto;
-    padding: 1rem;
-    background-color: #fefefe;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    color: var(--cinza-escuro);
-    font-size: 0.95rem;
-    box-shadow: inset 0 0 8px #eee;
-  }
-
-  .funcionario h3 {
-    margin-bottom: 1rem;
-    color: var(--azul-escuro-pastel);
-    font-weight: 600;
-  }
-
-  .pedido-item {
-    border-bottom: 1px solid #ccc;
-    padding: 0.4rem 0;
-    font-size: 1rem;
-    color: var(--cinza-escuro);
-  }
-
-  .pedido-item:last-child {
-    border-bottom: none;
-  }
-
-  .pedido-info {
-    margin-bottom: 0.5rem;
-  }
-
-  .pedido-lista {
-    max-height: 200px;
-    overflow-y: auto;
-    color: var(--cinza-escuro);
-  }
-
-  .pedido-btn {
-    background-color: #7a9aa7;
-    border: none;
-    color: white;
-    padding: 0.3rem 0.7rem;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-left: 0.4rem;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease;
-    filter: brightness(0.85);
-  }
-
-  .pedido-btn:hover, .pedido-btn:focus {
-    background-color: #5e7b8c;
-    outline: none;
-    filter: brightness(1);
-  }
-
-  /* Toggle button with more muted style */
-  #toggleViewBtn {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    background-color: #58707d;
-    color: var(--fundo-branco);
-    border: none;
-    border-radius: 50px;
-    padding: 0.7rem 1.2rem;
-    font-size: 1rem;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    transition: background-color 0.3s ease;
-    z-index: 11;
-  }
-
-  #toggleViewBtn:hover, #toggleViewBtn:focus {
-    background-color: #455a6a;
-    outline: none;
-  }
-
-  /* Modal Login Style */
-  #loginModal {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.35);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 20;
-  }
-
-  #loginModal.hidden {
-    display: none;
-  }
-
-  #loginModalContent {
-    background: var(--fundo-branco);
-    padding: 2rem;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 380px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-    text-align: center;
-  }
-
-  #loginModalContent h2 {
-    margin-bottom: 1rem;
-    color: var(--azul-escuro-pastel);
-  }
-
-  #loginForm label {
-    display: block;
-    text-align: left;
-    font-weight: 600;
-    margin-top: 0.4rem;
-    color: var(--cinza-escuro);
-  }
-
-  #loginForm input[type="text"],
-  #loginForm input[type="password"] {
-    width: 100%;
-    padding: 0.6rem 0.8rem;
-    margin: 0.2rem 0 1rem 0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-    font-family: inherit;
-    color: var(--azul-escuro-pastel);
-  }
-
-  #loginForm button {
-    width: 100%;
-    padding: 0.6rem;
-    background-color: var(--verde-claro);
-    border: none;
-    color: white;
-    font-size: 1.1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-
-  #loginForm button:hover, #loginForm button:focus {
-    background-color: #23867a;
-    outline: none;
-  }
-
-  #loginError {
-    color: var(--vermelho);
-    font-weight: 600;
-    margin-top: 0.5rem;
-    min-height: 1.2rem;
-  }
-
-  /* Responsividade */
-  @media (max-width: 480px) {
-    main {
-      padding: 0.5rem;
-      max-width: 100%;
-    }
-    .cardapio-lista, .carrinho, .funcionario {
-      max-width: 100%;
-      margin: 0 auto 1rem auto;
-    }
-    header {
-      font-size: 1.5rem;
-      padding: 1rem;
-    }
-    .item {
-      font-size: 1rem;
-      padding: 0.5rem 0.7rem;
-    }
-    .botao {
-      font-size: 0.85rem;
-      padding: 0.3rem 0.7rem;
-      margin-left: 0.3rem;
-    }
-    #toggleViewBtn {
-      padding: 0.5rem 0.9rem;
-      font-size: 0.9rem;
+function removerDoCarrinho(nome) {
+  const itemIndex = carrinho.findIndex(i => i.nome === nome);
+  if (itemIndex > -1) {
+    carrinho[itemIndex].quantidade--;
+    if (carrinho[itemIndex].quantidade === 0) {
+      carrinho.splice(itemIndex, 1);
     }
   }
-</style>
-</head>
-<body>
-  <header>
-    Cafeteria Doce Aroma
-  </header>
+  atualizarCarrinho();
+}
 
-  <main>
-    <!-- Cliente Section -->
-    <section id="clienteSection" class="active" aria-label="Área do cliente">
-      <h2>Cardápio</h2>
-      <ul class="cardapio-lista" role="list" aria-live="polite">
-        <li class="item">
-          <div class="detalhes-produto">
-            <span class="nome-produto">Café Espresso</span>
-            <span class="descricao-peso">Intenso e encorpado • 60 ml</span>
-            <span class="descricao-peso">Perfeito para começar o dia com energia.</span>
-          </div>
-          <span class="preco-produto">R$ 5,00</span>
-          <button class="botao" aria-label="Adicionar Café Espresso ao carrinho" onclick="adicionarAoCarrinho('Café Espresso', 5)">Adicionar</button>
-        </li>
-        <li class="item">
-          <div class="detalhes-produto">
-            <span class="nome-produto">Cappuccino</span>
-            <span class="descricao-peso">Espuma cremosa com canela • 150 ml</span>
-            <span class="descricao-peso">Uma combinação deliciosa de café e leite.</span>
-          </div>
-          <span class="preco-produto">R$ 7,50</span>
-          <button class="botao" aria-label="Adicionar Cappuccino ao carrinho" onclick="adicionarAoCarrinho('Cappuccino', 7.5)">Adicionar</button>
-        </li>
-        <li class="item">
-          <div class="detalhes-produto">
-            <span class="nome-produto">Latte</span>
-            <span class="descricao-peso">Leite vaporizado e café suave • 200 ml</span>
-            <span class="descricao-peso">Um clássico que agrada a todos os paladares.</span>
-          </div>
-          <span class="preco-produto">R$ 8,00</span>
-          <button class="botao" aria-label="Adicionar Latte ao carrinho" onclick="adicionarAoCarrinho('Latte', 8)">Adicionar</button>
-        </li>
-        <li class="item">
-          <div class="detalhes-produto">
-            <span class="nome-produto">Mocha</span>
-            <span class="descricao-peso">Chocolate e café intensos • 180 ml</span>
-            <span class="descricao-peso">Uma explosão de sabor para os amantes de chocolate.</span>
-          </div>
-          <span class="preco-produto">R$ 8,50</span>
-          <button class="botao" aria-label="Adicionar Mocha ao carrinho" onclick="adicionarAoCarrinho('Mocha', 8.5)">Adicionar</button>
-        </li>
-        <li class="item">
-          <div class="detalhes-produto">
-            <span class="nome-produto">Chá Gelado</span>
-            <span class="descricao-peso">Refrescante chá de frutas • 300 ml</span>
-            <span class="descricao-peso">Ideal para os dias quentes de verão.</span>
-          </div>
-          <span class="preco-produto">R$ 6,00</span>
-          <button class="botao" aria-label="Adicionar Chá Gelado ao carrinho" onclick="adicionarAoCarrinho('Chá Gelado', 6)">Adicionar</button>
-        </li>
-        <li class="item">
-          <div class="detalhes-produto">
-            <span class="nome-produto">Bolo de Cenoura</span>
-            <span class="descricao-peso">Fatia caseira com cobertura • 120 g</span>
-            <span class="descricao-peso">Um doce que traz memórias de infância.</span>
-          </div>
-          <span class="preco-produto">R$ 10,00</span>
-          <button class="botao" aria-label="Adicionar Bolo de Cenoura ao carrinho" onclick="adicionarAoCarrinho('Bolo de Cenoura', 10)">Adicionar</button>
-        </li>
-        <li class="item">
-          <div class="detalhes-produto">
-            <span class="nome-produto">Pão de Queijo</span>
-            <span class="descricao-peso">Tradicional mineiro • 60 g</span>
-            <span class="descricao-peso">Sabor autêntico e irresistível.</span>
-          </div>
-          <span class="preco-produto">R$ 4,00</span>
-          <button class="botao" aria-label="Adicionar Pão de Queijo ao carrinho" onclick="adicionarAoCarrinho('Pão de Queijo', 4)">Adicionar</button>
-        </li>
-      </ul>
+// Orders stored in memory as array of objects
+const listaPedidos = JSON.parse(localStorage.getItem('listaPedidos')) || [];
 
-      <div class="carrinho" aria-live="polite" aria-label="Resumo do pedido">
-        <h3>Carrinho de Compras</h3>
-        <div id="carrinho-lista" role="list"></div>
-        <div class="carrinho-total" id="carrinho-total">Total: R$ 0,00</div>
-        <button class="botao" id="finalizarPedidoBtn" onclick="finalizarPedido()" disabled>Finalizar Pedido</button>
-      </div>
-    </section>
+function finalizarPedido() {
+  if (carrinho.length === 0) return;
+  const pedidoId = Date.now();
+  // Clone the current cart as a new pedido
+  const pedido = {
+    id: pedidoId,
+    itens: JSON.parse(JSON.stringify(carrinho)),
+    total: total,
+    finalizadoItens: new Set(), // IDs or names of completed items
+  };
+  listaPedidos.push(pedido);
+  localStorage.setItem('listaPedidos', JSON.stringify(listaPedidos));
+  atualizarPedidosFuncionario();
+  // Reset cart
+  carrinho = [];
+  atualizarCarrinho();
+  alert('Pedido finalizado com sucesso!');
+}
 
-    <!-- Funcionário Section -->
-    <section id="funcionarioSection" aria-label="Área do funcionário">
-      <h2>Área do Funcionário</h2>
-      <div id="pedidos-funcionario" aria-live="polite" aria-label="Pedidos dos clientes">
-        <!-- Pedidos aparecerão aqui -->
-      </div>
-    </section>
-  </main>
+function atualizarPedidosFuncionario() {
+  pedidosFuncionario.innerHTML = '';
+  if (listaPedidos.length === 0) {
+    pedidosFuncionario.innerHTML = '<p>Nenhum pedido no momento.</p>';
+    return;
+  }
 
-  <!-- Login Modal -->
-  <div id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle" class="hidden">
-    <div id="loginModalContent">
-      <h2 id="loginTitle">Login Funcionário</h2>
-      <form id="loginForm" onsubmit="return realizarLogin(event)" autocomplete="off" novalidate>
-        <label for="usernameInput">Usuário</label>
-        <input type="text" id="usernameInput" name="username" required aria-required="true" autocomplete="username" />
-        <label for="passwordInput">Senha</label>
-        <input type="password" id="passwordInput" name="password" required aria-required="true" autocomplete="current-password" />
-        <button type="submit">Entrar</button>
-        <div id="loginError" role="alert" aria-live="assertive"></div>
-      </form>
-    </div>
-  </div>
+  listaPedidos.forEach(pedido => {
+    const pedidoDiv = document.createElement('div');
+    pedidoDiv.className = 'funcionario-pedido';
+    pedidoDiv.setAttribute('data-pedido-id', pedido.id);
 
-  <!-- Toggle Button -->
-  <button id="toggleViewBtn" aria-label="Alternar para área do funcionário">Área do Funcionário</button>
-
-  <script>
-    // State variables
-    let isFuncionarioLogado = false;
-    let carrinho = [];
-    let total = 0;
-
-    // Elements
-    const clienteSection = document.getElementById('clienteSection');
-    const funcionarioSection = document.getElementById('funcionarioSection');
-    const toggleBtn = document.getElementById('toggleViewBtn');
-    const loginModal = document.getElementById('loginModal');
-    const loginError = document.getElementById('loginError');
-    const finalizarPedidoBtn = document.getElementById('finalizarPedidoBtn');
-    const pedidosFuncionario = document.getElementById('pedidos-funcionario');
-
-    // Function to show client view
-    function mostrarCliente() {
-      clienteSection.classList.add('active');
-      funcionarioSection.classList.remove('active');
-      toggleBtn.innerText = 'Área do Funcionário';
-      toggleBtn.setAttribute('aria-label', 'Alternar para área do funcionário');
-    }
-
-    // Function to show employee view (only if logged in)
-    function mostrarFuncionario() {
-      if (!isFuncionarioLogado) {
-        // Show login modal
-        loginModal.classList.remove('hidden');
-        // Autofocus username input
-        document.getElementById('usernameInput').focus();
-        return;
-      }
-      clienteSection.classList.remove('active');
-      funcionarioSection.classList.add('active');
-      toggleBtn.innerText = 'Área do Cliente';
-      toggleBtn.setAttribute('aria-label', 'Alternar para área do cliente');
-    }
-
-    // Toggle handler
-    toggleBtn.addEventListener('click', () => {
-      if (clienteSection.classList.contains('active')) {
-        mostrarFuncionario();
-      } else {
-        mostrarCliente();
-      }
+    // Container for pedido items
+    let itensHtml = '';
+    pedido.itens.forEach(item => {
+      const itemKey = item.nome;
+      const finalizado = pedido.finalizadoItens.has(itemKey);
+      itensHtml += `
+        <div class="pedido-item" aria-live="polite">
+          <span>${item.nome} - Quantidade: ${item.quantidade}</span>
+          <button class="pedido-btn" aria-pressed="${finalizado}" aria-label="Marcar ${item.nome} como ${finalizado ? 'não finalizado' : 'finalizado'}"
+            onclick="toggleFinalizado('${pedido.id}', '${item.nome}')">
+            ${finalizado ? 'Desfazer' : 'Finalizado'}
+          </button>
+        </div>
+      `;
     });
 
-    // Login function
-    function realizarLogin(event) {
-      event.preventDefault();
-      const username = document.getElementById('usernameInput').value.trim();
-      const password = document.getElementById('passwordInput').value;
-      if (username === 'funcionario' && password === '1234') {
-        isFuncionarioLogado = true;
-        loginModal.classList.add('hidden');
-        loginError.innerText = '';
-        // Clear login form fields
-        document.getElementById('loginForm').reset();
-        mostrarFuncionario();
-      } else {
-        loginError.innerText = 'Usuário ou senha incorretos.';
-      }
-    }
+    pedidoDiv.innerHTML = `
+      <div class="pedido-info"><strong>Pedido #${pedido.id}</strong> - Total: R$ ${pedido.total.toFixed(2)}</div>
+      <div class="pedido-lista">${itensHtml}</div>
+      <button class="botao" onclick="finalizarPedidoFuncionario('${pedido.id}')">Finalizar Pedido</button>
+    `;
+    pedidosFuncionario.appendChild(pedidoDiv);
+  });
+}
 
-    // Close modal on outside click or Escape key
-    loginModal.addEventListener('click', (e) => {
-      if (e.target === loginModal) {
-        loginModal.classList.add('hidden');
-        loginError.innerText = '';
-      }
-    });
+function toggleFinalizado(id, itemNome) {
+  const pedido = listaPedidos.find(p => p.id.toString() === id.toString());
+  if (!pedido) return;
+  if (pedido.finalizadoItens.has(itemNome)) {
+    pedido.finalizadoItens.delete(itemNome);
+  } else {
+    pedido.finalizadoItens.add(itemNome);
+  }
+  atualizarPedidosFuncionario();
+}
 
-    document.addEventListener('keydown', (e) => {
-      if(e.key === 'Escape' && !loginModal.classList.contains('hidden')) {
-        loginModal.classList.add('hidden');
-        loginError.innerText = '';
-      }
-    });
+function finalizarPedidoFuncionario(id) {
+  const idx = listaPedidos.findIndex(p => p.id.toString() === id.toString());
+  if (idx === -1) return;
+  listaPedidos.splice(idx, 1);
+  localStorage.setItem('listaPedidos', JSON.stringify(listaPedidos));
+  atualizarPedidosFuncionario();
+  alert('Pedido finalizado e removido.');
+}
 
-    // Client-side cart functions
-    function adicionarAoCarrinho(produto, preco) {
-      const item = carrinho.find(i => i.nome === produto);
-      if (item) {
-        item.quantidade++;
-      } else {
-        carrinho.push({ nome: produto, preco: preco, quantidade: 1 });
-      }
-      atualizarCarrinho();
-    }
-
-    function atualizarCarrinho() {
-      const carrinhoLista = document.getElementById('carrinho-lista');
-      carrinhoLista.innerHTML = '';
-      total = 0;
-      carrinho.forEach(item => {
-        total += item.preco * item.quantidade;
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'carrinho-item';
-        itemDiv.innerHTML = `
-          ${item.nome} (x${item.quantidade}) - R$ ${item.preco.toFixed(2)}
-          <button class="botao botao-remover" aria-label="Remover um ${item.nome} do carrinho" onclick="removerDoCarrinho('${item.nome}')">Remover</button>
-        `;
-        carrinhoLista.appendChild(itemDiv);
-      });
-      document.getElementById('carrinho-total').innerText = `Total: R$ ${total.toFixed(2)}`;
-
-      // Enable finalizarPedidoBtn only if there are items
-      finalizarPedidoBtn.disabled = carrinho.length === 0;
-    }
-
-    function removerDoCarrinho(nome) {
-      const itemIndex = carrinho.findIndex(i => i.nome === nome);
-      if (itemIndex > -1) {
-        carrinho[itemIndex].quantidade--;
-        if (carrinho[itemIndex].quantidade === 0) {
-          carrinho.splice(itemIndex, 1);
-        }
-      }
-      atualizarCarrinho();
-    }
-
-    // Orders stored in memory as array of objects
-    const listaPedidos = [];
-
-    function finalizarPedido() {
-      if (carrinho.length === 0) return;
-      const pedidoId = Date.now();
-      // Clone the current cart as a new pedido
-      const pedido = {
-        id: pedidoId,
-        itens: JSON.parse(JSON.stringify(carrinho)),
-        total: total,
-        finalizadoItens: new Set(), // IDs or names of completed items
-      };
-      listaPedidos.push(pedido);
-      atualizarPedidosFuncionario();
-      // Reset cart
-      carrinho = [];
-      atualizarCarrinho();
-      alert('Pedido finalizado com sucesso!');
-    }
-
-    // Update the employee orders list
-    function atualizarPedidosFuncionario() {
-      pedidosFuncionario.innerHTML = '';
-      if (listaPedidos.length === 0) {
-        pedidosFuncionario.innerHTML = '<p>Nenhum pedido no momento.</p>';
-        return;
-      }
-
-      listaPedidos.forEach(pedido => {
-        const pedidoDiv = document.createElement('div');
-        pedidoDiv.className = 'funcionario-pedido';
-        pedidoDiv.setAttribute('data-pedido-id', pedido.id);
-
-        // Container for pedido items
-        let itensHtml = '';
-        pedido.itens.forEach(item => {
-          const itemKey = item.nome;
-          const finalizado = pedido.finalizadoItens.has(itemKey);
-          itensHtml += `
-            <div class="pedido-item" aria-live="polite">
-              <span>${item.nome} - Quantidade: ${item.quantidade}</span>
-              <button class="pedido-btn" aria-pressed="${finalizado}" aria-label="Marcar ${item.nome} como ${finalizado ? 'não finalizado' : 'finalizado'}"
-                onclick="toggleFinalizado('${pedido.id}', '${item.nome}')">
-                ${finalizado ? 'Desfazer' : 'Finalizado'}
-              </button>
-            </div>
-          `;
-        });
-
-        pedidoDiv.innerHTML = `
-          <div class="pedido-info"><strong>Pedido #${pedido.id}</strong> - Total: R$ ${pedido.total.toFixed(2)}</div>
-          <div class="pedido-lista">${itensHtml}</div>
-          <button class="botao" onclick="finalizarPedidoFuncionario('${pedido.id}')">Finalizar Pedido</button>
-        `;
-        pedidosFuncionario.appendChild(pedidoDiv);
-      });
-    }
-
-    // Toggle finalizado status of an item
-    function toggleFinalizado(id, itemNome) {
-      const pedido = listaPedidos.find(p => p.id.toString() === id.toString());
-      if (!pedido) return;
-      if (pedido.finalizadoItens.has(itemNome)) {
-        pedido.finalizadoItens.delete(itemNome);
-      } else {
-        pedido.finalizadoItens.add(itemNome);
-      }
-      atualizarPedidosFuncionario();
-    }
-
-    // Remove order when fully finalized
-    function finalizarPedidoFuncionario(id) {
-      const idx = listaPedidos.findIndex(p => p.id.toString() === id.toString());
-      if (idx === -1) return;
-      listaPedidos.splice(idx, 1);
-      atualizarPedidosFuncionario();
-      alert('Pedido finalizado e removido.');
-    }
-
-    // Initialize views on load
-    document.addEventListener('DOMContentLoaded', () => {
-      mostrarCliente();
-      atualizarCarrinho();
-      atualizarPedidosFuncionario();
-    });
-  </script>
-</body>
-</html>
-</content>
-</create_file>
+// Initialize views on load
+document.addEventListener('DOMContentLoaded', () => {
+  mostrarCliente();
+  atualizarCarrinho();
+  atualizarPedidosFuncionario();
+});
