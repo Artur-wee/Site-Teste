@@ -1,362 +1,672 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Cardápio - Cafeteria Conforto</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cardápio Cafeteria</title>
 <style>
+  /* Cores */
+  :root {
+    --azul-escuro-pastel: #264653;
+    --fundo-branco: #ffffff;
+    --verde-claro: #2a9d8f;
+    --vermelho: #e76f51;
+    --cinza-claro: #f9f9f9;
+    --cinza-escuro: #777;
+  }
+
+  /* Reset e base */
   * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
-  body {
-    margin:0; padding:0; 
+
+  body, html {
+    height: 100%;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #e9f0f7;
-    color: #33475b;
-    -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
+    background-color: var(--fundo-branco);
+    color: var(--azul-escuro-pastel);
     display: flex;
     flex-direction: column;
   }
+
   header {
-    background: #a7c7e7;
-    color: #fff;
-    padding: 1rem;
+    background-color: var(--azul-escuro-pastel);
+    color: var(--fundo-branco);
+    padding: 1.5rem 1rem;
     text-align: center;
+    font-size: 2rem;
     font-weight: 700;
-    font-size: 1.8rem;
+    border-radius: 0 0 8px 8px;
     user-select: none;
-    position: relative;
+    flex-shrink: 0;
   }
+
   main {
-    flex: 1;
-    max-width: 400px;
-    margin: 0 auto;
+    flex-grow: 1;
+    overflow-y: auto;
     padding: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
     width: 100%;
   }
-  .product-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+
+  section {
+    display: none;
+  }
+
+  section.active {
+    display: block;
+  }
+
+  h2 {
+    font-size: 1.5rem;
     margin-bottom: 1rem;
+    border-bottom: 2px solid var(--azul-escuro-pastel);
+    padding-bottom: 0.3rem;
   }
-  .product {
+
+  .cardapio-lista {
+    list-style: none;
+    max-width: 480px;
+    margin: 0 auto 1.5rem auto;
+  }
+
+  .item {
     display: flex;
-    background: #d6e3f0;
-    border-radius: 0.8rem;
-    padding: 0.8rem;
-    align-items: center;
-    box-shadow: 0 2px 6px rgba(51, 71, 91, 0.1);
-  }
-  .product img {
-    width: 64px;
-    height: 64px;
-    border-radius: 0.6rem;
-    object-fit: cover;
-    user-select: none;
-  }
-  .details {
-    flex: 1;
-    padding-left: 1rem;
-  }
-  .details h2 {
-    margin: 0 0 0.3rem 0;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid #ccc;
     font-weight: 600;
     font-size: 1.1rem;
-  }
-  .details p {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #527093;
-  }
-  .details .price {
-    margin-top: 0.4rem;
-    font-weight: 700;
-    color: #2a4370;
-  }
-  .quantity-controls {
-    display: flex;
-    flex-direction: column;
     align-items: center;
   }
-  .qty-btn {
-    background: #a7c7e7;
+
+  .item:last-child {
+    border-bottom: none;
+  }
+
+  .nome-produto {
+    font-weight: 700;
+    display: block;
+  }
+
+  .descricao-peso {
+    font-weight: 400;
+    font-size: 0.9rem;
+    margin-top: 0.15rem;
+    opacity: 0.7;
+  }
+
+  .preco-produto {
+    font-weight: 700;
+    white-space: nowrap;
+    margin-left: 1rem;
+  }
+
+  .detalhes-produto {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+
+  .botao {
+    background-color: var(--verde-claro);
+    color: white;
     border: none;
-    color: #fff;
-    font-size: 1.4rem;
-    width: 32px;
-    height: 32px;
-    border-radius: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 5px;
     cursor: pointer;
-    user-select: none;
-    line-height: 1;
+    margin-left: 0.6rem;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+  }
+
+  .botao:hover, .botao:focus {
+    background-color: #23867a;
+    outline: none;
+  }
+
+  .botao-remover {
+    background-color: var(--vermelho);
+  }
+
+  .botao-remover:hover, .botao-remover:focus {
+    background-color: #c9553a;
+  }
+
+  .carrinho {
+    max-width: 480px;
+    margin: 1rem auto;
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: var(--cinza-claro);
+  }
+
+  .carrinho h3 {
+    margin-bottom: 1rem;
+  }
+
+  .carrinho-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    align-items: center;
+  }
+
+  .carrinho-total {
+    font-weight: bold;
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    text-align: right;
+  }
+
+  /* Modified Funcionario style: more subtle */
+  .funcionario {
+    max-width: 480px;
+    margin: 0 auto 2rem auto;
+    padding: 1rem;
+    background-color: #fefefe;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    color: var(--cinza-escuro);
+    font-size: 0.95rem;
+    box-shadow: inset 0 0 8px #eee;
+  }
+
+  .funcionario h3 {
+    margin-bottom: 1rem;
+    color: var(--azul-escuro-pastel);
+    font-weight: 600;
+  }
+
+  .pedido-item {
+    border-bottom: 1px solid #ccc;
+    padding: 0.4rem 0;
+    font-size: 1rem;
+    color: var(--cinza-escuro);
+  }
+
+  .pedido-item:last-child {
+    border-bottom: none;
+  }
+
+  .pedido-info {
+    margin-bottom: 0.5rem;
+  }
+
+  .pedido-lista {
+    max-height: 200px;
+    overflow-y: auto;
+    color: var(--cinza-escuro);
+  }
+
+  .pedido-btn {
+    background-color: #7a9aa7;
+    border: none;
+    color: white;
+    padding: 0.3rem 0.7rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 0.4rem;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+    filter: brightness(0.85);
+  }
+
+  .pedido-btn:hover, .pedido-btn:focus {
+    background-color: #5e7b8c;
+    outline: none;
+    filter: brightness(1);
+  }
+
+  /* Toggle button with more muted style */
+  #toggleViewBtn {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background-color: #58707d;
+    color: var(--fundo-branco);
+    border: none;
+    border-radius: 50px;
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+    z-index: 11;
+  }
+
+  #toggleViewBtn:hover, #toggleViewBtn:focus {
+    background-color: #455a6a;
+    outline: none;
+  }
+
+  /* Modal Login Style */
+  #loginModal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.35);
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 2px 6px #7ea5d7;
-    transition: background 0.3s ease;
+    z-index: 20;
   }
-  .qty-btn:active {
-    background: #6091da;
+
+  #loginModal.hidden {
+    display: none;
   }
-  .qty-display {
-    margin: 0.3rem 0;
-    font-weight: 700;
-    font-size: 1.1rem;
-    width: 32px;
+
+  #loginModalContent {
+    background: var(--fundo-branco);
+    padding: 2rem;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 380px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
     text-align: center;
-    color: #2a4370;
-    user-select: none;
   }
-  .order-summary {
-    background: #cde0f7;
-    padding: 1rem;
-    border-radius: 0.8rem;
-    box-shadow: 0 2px 8px rgba(42, 67, 112, 0.15);
-  }
-  .order-summary h3 {
-    margin-top: 0;
-    font-weight: 700;
-    color: #2a4370;
-    font-size: 1.2rem;
-    user-select: none;
-  }
-  .order-items {
-    margin: 0.6rem 0 0.6rem 0;
-    max-height: 150px;
-    overflow-y: auto;
-    font-size: 0.95rem;
-    color: #33475b;
-  }
-  .order-total {
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: #33475b;
+
+  #loginModalContent h2 {
     margin-bottom: 1rem;
-    user-select: none;
+    color: var(--azul-escuro-pastel);
   }
-  #sendOrderBtn {
+
+  #loginForm label {
+    display: block;
+    text-align: left;
+    font-weight: 600;
+    margin-top: 0.4rem;
+    color: var(--cinza-escuro);
+  }
+
+  #loginForm input[type="text"],
+  #loginForm input[type="password"] {
     width: 100%;
-    padding: 0.8rem;
-    background: #7aaaee;
+    padding: 0.6rem 0.8rem;
+    margin: 0.2rem 0 1rem 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--azul-escuro-pastel);
+  }
+
+  #loginForm button {
+    width: 100%;
+    padding: 0.6rem;
+    background-color: var(--verde-claro);
     border: none;
-    border-radius: 0.6rem;
-    font-size: 1.2rem;
     color: white;
-    font-weight: 700;
+    font-size: 1.1rem;
+    border-radius: 6px;
     cursor: pointer;
-    box-shadow: 0 4px 10px #5b8bcc;
-    user-select: none;
-    transition: background 0.3s ease;
+    transition: background-color 0.3s ease;
   }
-  #sendOrderBtn:disabled {
-    background: #a7c7e7;
-    cursor: not-allowed;
-    box-shadow: none;
+
+  #loginForm button:hover, #loginForm button:focus {
+    background-color: #23867a;
+    outline: none;
   }
-  #sendOrderBtn:not(:disabled):hover {
-    background: #5b8bcc;
+
+  #loginError {
+    color: var(--vermelho);
+    font-weight: 600;
+    margin-top: 0.5rem;
+    min-height: 1.2rem;
   }
-  /* Scrollbar for order items */
-  .order-items::-webkit-scrollbar {
-    width: 6px;
-  }
-  .order-items::-webkit-scrollbar-thumb {
-    background: #7aaaee;
-    border-radius: 3px;
-  }
-  /* Responsividade e ajustes menores */
-  @media (max-width: 400px) {
-    .product {
-      flex-direction: column;
-      align-items: flex-start;
+
+  /* Responsividade */
+  @media (max-width: 480px) {
+    main {
+      padding: 0.5rem;
+      max-width: 100%;
     }
-    .quantity-controls {
-      flex-direction: row;
-      margin-top: 0.5rem;
+    .cardapio-lista, .carrinho, .funcionario {
+      max-width: 100%;
+      margin: 0 auto 1rem auto;
     }
-    .qty-btn {
-      width: 36px;
-      height: 36px;
-      font-size: 1.6rem;
+    header {
+      font-size: 1.5rem;
+      padding: 1rem;
+    }
+    .item {
+      font-size: 1rem;
+      padding: 0.5rem 0.7rem;
+    }
+    .botao {
+      font-size: 0.85rem;
+      padding: 0.3rem 0.7rem;
+      margin-left: 0.3rem;
+    }
+    #toggleViewBtn {
+      padding: 0.5rem 0.9rem;
+      font-size: 0.9rem;
     }
   }
 </style>
 </head>
 <body>
-<header>Cafeteria Conforto</header>
-<main>
-  <section id="cliente-area" aria-label="Área do cliente - Cardápio e pedido">
-    <div class="product-list" id="productList" tabindex="0">
-      <!-- Produtos carregados via JS -->
-    </div>
-    <section class="order-summary" aria-live="polite" aria-atomic="true" aria-label="Resumo do pedido do cliente">
-      <h3>Resumo do Pedido</h3>
-      <div class="order-items" id="orderItems">
-        Nenhum item adicionado.
+  <header>
+    Cafeteria Doce Aroma
+  </header>
+
+  <main>
+    <!-- Cliente Section -->
+    <section id="clienteSection" class="active" aria-label="Área do cliente">
+      <h2>Cardápio</h2>
+      <ul class="cardapio-lista" role="list" aria-live="polite">
+        <li class="item">
+          <div class="detalhes-produto">
+            <span class="nome-produto">Café Espresso</span>
+            <span class="descricao-peso">Intenso e encorpado • 60 ml</span>
+            <span class="descricao-peso">Perfeito para começar o dia com energia.</span>
+          </div>
+          <span class="preco-produto">R$ 5,00</span>
+          <button class="botao" aria-label="Adicionar Café Espresso ao carrinho" onclick="adicionarAoCarrinho('Café Espresso', 5)">Adicionar</button>
+        </li>
+        <li class="item">
+          <div class="detalhes-produto">
+            <span class="nome-produto">Cappuccino</span>
+            <span class="descricao-peso">Espuma cremosa com canela • 150 ml</span>
+            <span class="descricao-peso">Uma combinação deliciosa de café e leite.</span>
+          </div>
+          <span class="preco-produto">R$ 7,50</span>
+          <button class="botao" aria-label="Adicionar Cappuccino ao carrinho" onclick="adicionarAoCarrinho('Cappuccino', 7.5)">Adicionar</button>
+        </li>
+        <li class="item">
+          <div class="detalhes-produto">
+            <span class="nome-produto">Latte</span>
+            <span class="descricao-peso">Leite vaporizado e café suave • 200 ml</span>
+            <span class="descricao-peso">Um clássico que agrada a todos os paladares.</span>
+          </div>
+          <span class="preco-produto">R$ 8,00</span>
+          <button class="botao" aria-label="Adicionar Latte ao carrinho" onclick="adicionarAoCarrinho('Latte', 8)">Adicionar</button>
+        </li>
+        <li class="item">
+          <div class="detalhes-produto">
+            <span class="nome-produto">Mocha</span>
+            <span class="descricao-peso">Chocolate e café intensos • 180 ml</span>
+            <span class="descricao-peso">Uma explosão de sabor para os amantes de chocolate.</span>
+          </div>
+          <span class="preco-produto">R$ 8,50</span>
+          <button class="botao" aria-label="Adicionar Mocha ao carrinho" onclick="adicionarAoCarrinho('Mocha', 8.5)">Adicionar</button>
+        </li>
+        <li class="item">
+          <div class="detalhes-produto">
+            <span class="nome-produto">Chá Gelado</span>
+            <span class="descricao-peso">Refrescante chá de frutas • 300 ml</span>
+            <span class="descricao-peso">Ideal para os dias quentes de verão.</span>
+          </div>
+          <span class="preco-produto">R$ 6,00</span>
+          <button class="botao" aria-label="Adicionar Chá Gelado ao carrinho" onclick="adicionarAoCarrinho('Chá Gelado', 6)">Adicionar</button>
+        </li>
+        <li class="item">
+          <div class="detalhes-produto">
+            <span class="nome-produto">Bolo de Cenoura</span>
+            <span class="descricao-peso">Fatia caseira com cobertura • 120 g</span>
+            <span class="descricao-peso">Um doce que traz memórias de infância.</span>
+          </div>
+          <span class="preco-produto">R$ 10,00</span>
+          <button class="botao" aria-label="Adicionar Bolo de Cenoura ao carrinho" onclick="adicionarAoCarrinho('Bolo de Cenoura', 10)">Adicionar</button>
+        </li>
+        <li class="item">
+          <div class="detalhes-produto">
+            <span class="nome-produto">Pão de Queijo</span>
+            <span class="descricao-peso">Tradicional mineiro • 60 g</span>
+            <span class="descricao-peso">Sabor autêntico e irresistível.</span>
+          </div>
+          <span class="preco-produto">R$ 4,00</span>
+          <button class="botao" aria-label="Adicionar Pão de Queijo ao carrinho" onclick="adicionarAoCarrinho('Pão de Queijo', 4)">Adicionar</button>
+        </li>
+      </ul>
+
+      <div class="carrinho" aria-live="polite" aria-label="Resumo do pedido">
+        <h3>Carrinho de Compras</h3>
+        <div id="carrinho-lista" role="list"></div>
+        <div class="carrinho-total" id="carrinho-total">Total: R$ 0,00</div>
+        <button class="botao" id="finalizarPedidoBtn" onclick="finalizarPedido()" disabled>Finalizar Pedido</button>
       </div>
-      <div class="order-total" id="orderTotal">
-        Total: R$ 0,00
-      </div>
-      <button id="sendOrderBtn" disabled>Enviar Pedido</button>
     </section>
-  </section>
-</main>
-<script>
-  const products = [
-    { id: 'espresso', name: 'Café Espresso', description: 'Café espresso forte e encorpado', price: 4.50,
-      img: 'https://images.unsplash.com/photo-1525714186800-19a0be419291?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&q=80'},
-    { id: 'cappuccino', name: 'Cappuccino', description: 'Espuma cremosa com toque de chocolate', price: 7.00,
-      img: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&q=80'},
-    { id: 'latte', name: 'Latte', description: 'Leite vaporizado com café suave', price: 6.00,
-      img: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&q=80'},
-    { id: 'mocha', name: 'Mocha', description: 'Café com chocolate e chantilly', price: 7.50,
-      img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&q=80'},
-    { id: 'cookie', name: 'Biscoito amanteigado', description: 'Biscoitos crocantes para acompanhar', price: 3.00,
-      img: 'https://images.unsplash.com/photo-1505253210343-cdca418a61f5?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&q=80'}
-  ];
 
-  const productListEl = document.getElementById('productList');
-  const orderItemsEl = document.getElementById('orderItems');
-  const orderTotalEl = document.getElementById('orderTotal');
-  const sendOrderBtn = document.getElementById('sendOrderBtn');
+    <!-- Funcionário Section -->
+    <section id="funcionarioSection" aria-label="Área do funcionário">
+      <h2>Área do Funcionário</h2>
+      <div id="pedidos-funcionario" aria-live="polite" aria-label="Pedidos dos clientes">
+        <!-- Pedidos aparecerão aqui -->
+      </div>
+    </section>
+  </main>
 
-  let order = {};
+  <!-- Login Modal -->
+  <div id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle" class="hidden">
+    <div id="loginModalContent">
+      <h2 id="loginTitle">Login Funcionário</h2>
+      <form id="loginForm" onsubmit="return realizarLogin(event)" autocomplete="off" novalidate>
+        <label for="usernameInput">Usuário</label>
+        <input type="text" id="usernameInput" name="username" required aria-required="true" autocomplete="username" />
+        <label for="passwordInput">Senha</label>
+        <input type="password" id="passwordInput" name="password" required aria-required="true" autocomplete="current-password" />
+        <button type="submit">Entrar</button>
+        <div id="loginError" role="alert" aria-live="assertive"></div>
+      </form>
+    </div>
+  </div>
 
-  function formatPrice(value) {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
+  <!-- Toggle Button -->
+  <button id="toggleViewBtn" aria-label="Alternar para área do funcionário">Área do Funcionário</button>
 
-  function renderProducts() {
-    productListEl.innerHTML = '';
-    products.forEach(product => {
-      const productEl = document.createElement('div');
-      productEl.className = 'product';
-      productEl.setAttribute('data-id', product.id);
-      productEl.innerHTML = `
-        <img src="${product.img}" alt="${product.name}" loading="lazy" />
-        <div class="details">
-          <h2>${product.name}</h2>
-          <p>${product.description}</p>
-          <div class="price">${formatPrice(product.price)}</div>
-        </div>
-        <div class="quantity-controls" role="group" aria-label="Controle de quantidade para ${product.name}">
-          <button class="qty-btn" aria-label="Diminuir quantidade" data-action="decrease">-</button>
-          <div class="qty-display" aria-live="polite" aria-atomic="true">0</div>
-          <button class="qty-btn" aria-label="Aumentar quantidade" data-action="increase">+</button>
-        </div>
-      `;
-      productListEl.appendChild(productEl);
-    });
-  }
-
-  function updateOrder(productId, delta) {
-    const currentQty = order[productId] || 0;
-    let newQty = currentQty + delta;
-    if (newQty < 0) newQty = 0;
-    order[productId] = newQty;
-    if (newQty === 0) delete order[productId];
-    renderOrder();
-    updateQuantityDisplay(productId);
-  }
-  function updateQuantityDisplay(productId) {
-    const productEl = productListEl.querySelector(`.product[data-id="${productId}"]`);
-    if (!productEl) return;
-    const qtyDisplay = productEl.querySelector('.qty-display');
-    const qty = order[productId] || 0;
-    qtyDisplay.textContent = qty.toString();
-  }
-  function renderOrder() {
-    const keys = Object.keys(order);
-    if (keys.length === 0) {
-      orderItemsEl.textContent = 'Nenhum item adicionado.';
-      orderTotalEl.textContent = 'Total: R$ 0,00';
-      sendOrderBtn.disabled = true;
-      return;
-    }
-    let summaryHTML = '';
+  <script>
+    // State variables
+    let isFuncionarioLogado = false;
+    let carrinho = [];
     let total = 0;
-    keys.forEach(id => {
-      const product = products.find(p => p.id === id);
-      const quantity = order[id];
-      const price = product.price * quantity;
-      total += price;
-      summaryHTML += `<div>${quantity} x ${product.name} - ${formatPrice(price)}</div>`;
-    });
-    orderItemsEl.innerHTML = summaryHTML;
-    orderTotalEl.textContent = `Total: ${formatPrice(total)}`;
-    sendOrderBtn.disabled = false;
-  }
-  productListEl.addEventListener('click', (e) => {
-    const btn = e.target.closest('.qty-btn');
-    if (!btn) return;
-    const action = btn.dataset.action;
-    const productEl = btn.closest('.product');
-    const productId = productEl.getAttribute('data-id');
-    if (action === 'increase') {
-      updateOrder(productId, +1);
-    } else if (action === 'decrease') {
-      updateOrder(productId, -1);
+
+    // Elements
+    const clienteSection = document.getElementById('clienteSection');
+    const funcionarioSection = document.getElementById('funcionarioSection');
+    const toggleBtn = document.getElementById('toggleViewBtn');
+    const loginModal = document.getElementById('loginModal');
+    const loginError = document.getElementById('loginError');
+    const finalizarPedidoBtn = document.getElementById('finalizarPedidoBtn');
+    const pedidosFuncionario = document.getElementById('pedidos-funcionario');
+
+    // Function to show client view
+    function mostrarCliente() {
+      clienteSection.classList.add('active');
+      funcionarioSection.classList.remove('active');
+      toggleBtn.innerText = 'Área do Funcionário';
+      toggleBtn.setAttribute('aria-label', 'Alternar para área do funcionário');
     }
-  });
 
-  // Função para gerar ID única para pedidos
-  function generateOrderId() {
-    return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
-  }
-
-  // Função para salvar pedido no localStorage
-  function saveOrderPedido(orderObj) {
-    const pedidos = getPedidos() || [];
-    pedidos.push(orderObj);
-    localStorage.setItem('cafeteria_pedidos', JSON.stringify(pedidos));
-  }
-
-  // Função para pegar os pedidos do localStorage
-  function getPedidos() {
-    const pedidosStr = localStorage.getItem('cafeteria_pedidos');
-    if (!pedidosStr) return [];
-    try {
-      return JSON.parse(pedidosStr);
-    } catch {
-      return [];
+    // Function to show employee view (only if logged in)
+    function mostrarFuncionario() {
+      if (!isFuncionarioLogado) {
+        // Show login modal
+        loginModal.classList.remove('hidden');
+        // Autofocus username input
+        document.getElementById('usernameInput').focus();
+        return;
+      }
+      clienteSection.classList.remove('active');
+      funcionarioSection.classList.add('active');
+      toggleBtn.innerText = 'Área do Cliente';
+      toggleBtn.setAttribute('aria-label', 'Alternar para área do cliente');
     }
-  }
 
-  // Evento enviar pedido
-  sendOrderBtn.addEventListener('click', () => {
-    if (Object.keys(order).length === 0) return;
-
-    const pedidoId = generateOrderId();
-    const timestamp = Date.now();
-    const pedidoProdutos = Object.entries(order).map(([prodId, qty]) => {
-      return { productId: prodId, quantity: qty, done: false };
+    // Toggle handler
+    toggleBtn.addEventListener('click', () => {
+      if (clienteSection.classList.contains('active')) {
+        mostrarFuncionario();
+      } else {
+        mostrarCliente();
+      }
     });
 
-    const novoPedido = {
-      id: pedidoId,
-      timestamp,
-      produtos: pedidoProdutos
-    };
+    // Login function
+    function realizarLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById('usernameInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+      if (username === 'funcionario' && password === '1234') {
+        isFuncionarioLogado = true;
+        loginModal.classList.add('hidden');
+        loginError.innerText = '';
+        // Clear login form fields
+        document.getElementById('loginForm').reset();
+        mostrarFuncionario();
+      } else {
+        loginError.innerText = 'Usuário ou senha incorretos.';
+      }
+    }
 
-    saveOrderPedido(novoPedido);
+    // Close modal on outside click or Escape key
+    loginModal.addEventListener('click', (e) => {
+      if (e.target === loginModal) {
+        loginModal.classList.add('hidden');
+        loginError.innerText = '';
+      }
+    });
 
-    // Limpar pedido atual
-    order = {};
-    renderOrder();
-    products.forEach(p => updateQuantityDisplay(p.id));
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape' && !loginModal.classList.contains('hidden')) {
+        loginModal.classList.add('hidden');
+        loginError.innerText = '';
+      }
+    });
 
-    alert('Pedido enviado com sucesso! Por favor, aguarde no seu lugar.');
-  });
+    // Client-side cart functions
+    function adicionarAoCarrinho(produto, preco) {
+      const item = carrinho.find(i => i.nome === produto);
+      if (item) {
+        item.quantidade++;
+      } else {
+        carrinho.push({ nome: produto, preco: preco, quantidade: 1 });
+      }
+      atualizarCarrinho();
+    }
 
-  // Inicialização
-  function init() {
-    renderProducts();
-    renderOrder();
-  }
-  init();
-</script>
+    function atualizarCarrinho() {
+      const carrinhoLista = document.getElementById('carrinho-lista');
+      carrinhoLista.innerHTML = '';
+      total = 0;
+      carrinho.forEach(item => {
+        total += item.preco * item.quantidade;
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'carrinho-item';
+        itemDiv.innerHTML = `
+          ${item.nome} (x${item.quantidade}) - R$ ${item.preco.toFixed(2)}
+          <button class="botao botao-remover" aria-label="Remover um ${item.nome} do carrinho" onclick="removerDoCarrinho('${item.nome}')">Remover</button>
+        `;
+        carrinhoLista.appendChild(itemDiv);
+      });
+      document.getElementById('carrinho-total').innerText = `Total: R$ ${total.toFixed(2)}`;
+
+      // Enable finalizarPedidoBtn only if there are items
+      finalizarPedidoBtn.disabled = carrinho.length === 0;
+    }
+
+    function removerDoCarrinho(nome) {
+      const itemIndex = carrinho.findIndex(i => i.nome === nome);
+      if (itemIndex > -1) {
+        carrinho[itemIndex].quantidade--;
+        if (carrinho[itemIndex].quantidade === 0) {
+          carrinho.splice(itemIndex, 1);
+        }
+      }
+      atualizarCarrinho();
+    }
+
+    // Orders stored in memory as array of objects
+    const listaPedidos = [];
+
+    function finalizarPedido() {
+      if (carrinho.length === 0) return;
+      const pedidoId = Date.now();
+      // Clone the current cart as a new pedido
+      const pedido = {
+        id: pedidoId,
+        itens: JSON.parse(JSON.stringify(carrinho)),
+        total: total,
+        finalizadoItens: new Set(), // IDs or names of completed items
+      };
+      listaPedidos.push(pedido);
+      atualizarPedidosFuncionario();
+      // Reset cart
+      carrinho = [];
+      atualizarCarrinho();
+      alert('Pedido finalizado com sucesso!');
+    }
+
+    // Update the employee orders list
+    function atualizarPedidosFuncionario() {
+      pedidosFuncionario.innerHTML = '';
+      if (listaPedidos.length === 0) {
+        pedidosFuncionario.innerHTML = '<p>Nenhum pedido no momento.</p>';
+        return;
+      }
+
+      listaPedidos.forEach(pedido => {
+        const pedidoDiv = document.createElement('div');
+        pedidoDiv.className = 'funcionario-pedido';
+        pedidoDiv.setAttribute('data-pedido-id', pedido.id);
+
+        // Container for pedido items
+        let itensHtml = '';
+        pedido.itens.forEach(item => {
+          const itemKey = item.nome;
+          const finalizado = pedido.finalizadoItens.has(itemKey);
+          itensHtml += `
+            <div class="pedido-item" aria-live="polite">
+              <span>${item.nome} - Quantidade: ${item.quantidade}</span>
+              <button class="pedido-btn" aria-pressed="${finalizado}" aria-label="Marcar ${item.nome} como ${finalizado ? 'não finalizado' : 'finalizado'}"
+                onclick="toggleFinalizado('${pedido.id}', '${item.nome}')">
+                ${finalizado ? 'Desfazer' : 'Finalizado'}
+              </button>
+            </div>
+          `;
+        });
+
+        pedidoDiv.innerHTML = `
+          <div class="pedido-info"><strong>Pedido #${pedido.id}</strong> - Total: R$ ${pedido.total.toFixed(2)}</div>
+          <div class="pedido-lista">${itensHtml}</div>
+          <button class="botao" onclick="finalizarPedidoFuncionario('${pedido.id}')">Finalizar Pedido</button>
+        `;
+        pedidosFuncionario.appendChild(pedidoDiv);
+      });
+    }
+
+    // Toggle finalizado status of an item
+    function toggleFinalizado(id, itemNome) {
+      const pedido = listaPedidos.find(p => p.id.toString() === id.toString());
+      if (!pedido) return;
+      if (pedido.finalizadoItens.has(itemNome)) {
+        pedido.finalizadoItens.delete(itemNome);
+      } else {
+        pedido.finalizadoItens.add(itemNome);
+      }
+      atualizarPedidosFuncionario();
+    }
+
+    // Remove order when fully finalized
+    function finalizarPedidoFuncionario(id) {
+      const idx = listaPedidos.findIndex(p => p.id.toString() === id.toString());
+      if (idx === -1) return;
+      listaPedidos.splice(idx, 1);
+      atualizarPedidosFuncionario();
+      alert('Pedido finalizado e removido.');
+    }
+
+    // Initialize views on load
+    document.addEventListener('DOMContentLoaded', () => {
+      mostrarCliente();
+      atualizarCarrinho();
+      atualizarPedidosFuncionario();
+    });
+  </script>
 </body>
 </html>
-
+</content>
+</create_file>
