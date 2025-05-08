@@ -670,3 +670,110 @@
 </html>
 </content>
 </create_file>
+/**
+ * Simple Node.js + Express backend for Cafeteria ordering system
+ * Shared data for all users, with:
+ * - Get menu endpoint
+ * - Create order endpoint
+ * - Get all orders endpoint
+ * - Update order item finalized status
+ * - Finalize (delete) order
+ * 
+ * Serves static index.html frontend as well.
+ */
+
+const express = require('express');
+const path = require('path');
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+
+// In-memory store for demo. In production, replace with DB.
+let orders = [];
+let orderIdSeq = 1;
+
+// Menu is static - same as frontend
+const menu = [
+  { name: "Café Espresso", description: "Intenso e encorpado • 60 ml", extra: "Perfeito para começar o dia com energia.", price: 5.00, img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80" },
+  { name: "Cappuccino", description: "Espuma cremosa com canela • 150 ml", extra: "Uma combinação deliciosa de café e leite.", price: 7.50, img: "https://images.unsplash.com/photo-1511920170033-f8396924c348?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80" },
+  { name: "Latte", description: "Leite vaporizado e café suave • 200 ml", extra: "Um clássico que agrada a todos os paladares.", price: 8.00, img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80" },
+  { name: "Mocha", description: "Chocolate e café intensos • 180 ml", extra: "Uma explosão de sabor para os amantes de chocolate.", price: 8.50, img: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80" },
+  { name: "Chá Gelado", description: "Refrescante chá de frutas • 300 ml", extra: "Ideal para os dias quentes de verão.", price: 6.00, img: "https://images.unsplash.com/photo-1590080877777-a051997c0747?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80" },
+  { name: "Bolo de Cenoura", description: "Fatia caseira com cobertura • 120 g", extra: "Um doce que traz memórias de infância.", price: 10.00, img: "https://images.unsplash.com/photo-1505253210346-918c2d129f33?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80" },
+  { name: "Pão de Queijo", description: "Tradicional mineiro • 60 g", extra: "Sabor autêntico e irresistível.", price: 4.00, img: "https://images.unsplash.com/photo-1622295689216-c05e9deb0a4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80" }
+];
+
+// Serve static files (frontend)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// API Endpoints
+
+// Get menu (optional)
+app.get('/api/menu', (req, res) => {
+  res.json(menu);
+});
+
+// Get all orders
+app.get('/api/orders', (req, res) => {
+  res.json(orders);
+});
+
+// Create new order
+app.post('/api/orders', (req, res) => {
+  const { itens, total } = req.body;
+  if (!itens || !Array.isArray(itens) || itens.length === 0) {
+    return res.status(400).json({ error: 'Itens do pedido inválidos' });
+  }
+  if (typeof total !== 'number' || total < 0) {
+    return res.status(400).json({ error: 'Total inválido' });
+  }
+  const newOrder = {
+    id: orderIdSeq++,
+    itens: itens.map(i => ({ nome: i.nome, preco: i.preco, quantidade: i.quantidade })),
+    total,
+    finalizadoItens: [] // array of item names marked finalized
+  };
+  orders.push(newOrder);
+  res.status(201).json(newOrder);
+});
+
+// Update item finalized status in order
+app.patch('/api/orders/:id/items', (req, res) => {
+  const orderId = parseInt(req.params.id, 10);
+  const { nome, finalizado } = req.body;
+  if (!nome || typeof finalizado !== 'boolean') {
+    return res.status(400).json({ error: 'Nome do item e status finalizado devem ser informados' });
+  }
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return res.status(404).json({ error: 'Pedido não encontrado' });
+  const itemExists = order.itens.some(i => i.nome === nome);
+  if (!itemExists) return res.status(404).json({ error: 'Item não encontrado no pedido' });
+
+  if (finalizado) {
+    if (!order.finalizadoItens.includes(nome)) order.finalizadoItens.push(nome);
+  } else {
+    order.finalizadoItens = order.finalizadoItens.filter(n => n !== nome);
+  }
+  res.json(order);
+});
+
+// Finalize (delete) order
+app.delete('/api/orders/:id', (req, res) => {
+  const orderId = parseInt(req.params.id,10);
+  const index = orders.findIndex(o => o.id === orderId);
+  if (index === -1) return res.status(404).json({ error: 'Pedido não encontrado' });
+  orders.splice(index,1);
+  res.status(204).end();
+});
+
+// Default route: serve index.html (in /public)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
+
+app.listen(port, () => {
+  console.log(\`Cafeteria app backend listening at http://localhost:\${port}\`);
+});
+
